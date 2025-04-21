@@ -15,7 +15,7 @@ fun initKoin(enableNetworkLogs: Boolean = true, config: KoinAppDeclaration? = nu
             initTargetModule,
             commonModule(enableNetworkLogs = enableNetworkLogs),
             splashModule(),
-            /*permissionsModule()*/
+            permissionsModule()
         )
     }
 }

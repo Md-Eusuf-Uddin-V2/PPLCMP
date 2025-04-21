@@ -12,20 +12,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import dev.icerock.moko.permissions.PermissionsController
 import dev.icerock.moko.permissions.compose.BindEffect
 import dev.icerock.moko.permissions.compose.rememberPermissionsControllerFactory
 
 @Composable
-fun LoginScreenRoot() {
-    val factory = rememberPermissionsControllerFactory()
+fun LoginScreenRoot(
+    viewModel: PermissionsViewModel,
+    controller: PermissionsController
+) {
+    /*val factory = rememberPermissionsControllerFactory()
     val controller = remember(factory) {
         factory.createPermissionsController()
     }
 
     val viewModel: PermissionsViewModel = viewModel {
-        PermissionsViewModel(controller).apply {
-        }
-    }
+        PermissionsViewModel(controller)
+    }*/
 
 
     BindEffect(controller)
