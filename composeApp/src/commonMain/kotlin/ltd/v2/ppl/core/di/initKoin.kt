@@ -1,14 +1,21 @@
 package ltd.v2.ppl.core.di
 
+import ltd.v2.ppl.auth.di.permissionsModule
+import ltd.v2.ppl.splash.di.splashModule
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
 import org.koin.dsl.KoinAppDeclaration
 
-expect val targetModule: Module
+expect val initTargetModule: Module
 
-fun initKoin(config: KoinAppDeclaration? = null) {
+fun initKoin(enableNetworkLogs: Boolean = true, config: KoinAppDeclaration? = null) {
     startKoin {
         config?.invoke(this)
-        modules(targetModule)
+        modules(
+            initTargetModule,
+            commonModule(enableNetworkLogs = enableNetworkLogs),
+            splashModule(),
+            /*permissionsModule()*/
+        )
     }
 }

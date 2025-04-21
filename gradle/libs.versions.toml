@@ -13,8 +13,8 @@ androidx-material3 = "1.12.0"
 androidx-test-junit = "1.2.1"
 compose-multiplatform = "1.7.0"
 junit = "4.13.2"
-kotlin = "2.1.0"
-ksp = "2.1.0-1.0.28"
+kotlin = "2.1.20"
+ksp = "2.1.20-1.0.32"
 kotlinx-coroutines = "1.9.0"
 navigationCompose = "2.8.0-alpha10"
 kotlinSerialization = "1.7.3"
@@ -28,6 +28,8 @@ foundationAndroid = "1.7.7"
 cmptoast = "1.0.4"
 uiAndroid = "1.7.7"
 settings = "1.0.2"
+cupertino = "0.1.0-alpha03"
+moko = "0.18.0"
 
 
 [libraries]
@@ -81,6 +83,10 @@ cmptoast = { module = "network.chaintech:cmptoast", version.ref = "cmptoast" }
 androidx-ui-android = { group = "androidx.compose.ui", name = "ui-android", version.ref = "uiAndroid" }
 
 remember-settings = { module = "dev.burnoo:compose-remember-setting", version.ref = "settings" }
+cupertino = { module = "io.github.alexzhirkevich:cupertino-adaptive", version.ref = "cupertino" }
+
+moko-permissions = { module = "dev.icerock.moko:permissions", version.ref = "moko" }
+moko-permissions-compose = { module = "dev.icerock.moko:permissions-compose", version.ref = "moko" }
 
 
 
