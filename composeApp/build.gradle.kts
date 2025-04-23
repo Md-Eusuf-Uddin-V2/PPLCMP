@@ -82,6 +82,19 @@ kotlin {
             implementation(libs.cupertino)
             api(libs.moko.permissions)
             api(libs.moko.permissions.compose)
+
+            implementation(libs.calf.permissions)
+
+            implementation(libs.datastore.preferences)
+            implementation(libs.datastore)
+
+            implementation(libs.connectivity.core)
+            implementation(libs.connectivity.device)
+
+            // For compose support
+            implementation(libs.connectivity.compose.device)
+
+
         }
 
         nativeMain.dependencies {
@@ -96,7 +109,7 @@ kotlin {
 
 android {
     namespace = "ltd.v2.ppl"
-    compileSdk = libs.versions.android.compileSdk.get().toInt()
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "ltd.v2.ppl"

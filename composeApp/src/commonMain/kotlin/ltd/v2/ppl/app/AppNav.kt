@@ -8,7 +8,7 @@ import androidx.navigation.compose.rememberNavController
 import dev.icerock.moko.permissions.compose.PermissionsControllerFactory
 import dev.icerock.moko.permissions.compose.rememberPermissionsControllerFactory
 import ltd.v2.ppl.auth.presentation.LoginScreenRoot
-import ltd.v2.ppl.auth.presentation.PermissionsViewModel
+import ltd.v2.ppl.auth.presentation.LoginViewModel
 import ltd.v2.ppl.splash.SplashScreenRoot
 import ltd.v2.ppl.splash.SplashViewModel
 import org.koin.compose.viewmodel.koinViewModel
@@ -36,7 +36,7 @@ fun AppNavigation() {
                 factory.createPermissionsController()
             }
 
-            val viewModel: PermissionsViewModel = koinViewModel(parameters = { parametersOf(controller) })
+            val viewModel: LoginViewModel = koinViewModel(parameters = { parametersOf(controller) })
 
             LoginScreenRoot(
                 viewModel = viewModel,

@@ -1,6 +1,6 @@
 package ltd.v2.ppl.core.di
 
-import ltd.v2.ppl.auth.di.permissionsModule
+import ltd.v2.ppl.auth.di.loginModule
 import ltd.v2.ppl.splash.di.splashModule
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
@@ -15,7 +15,7 @@ fun initKoin(enableNetworkLogs: Boolean = true, config: KoinAppDeclaration? = nu
             initTargetModule,
             commonModule(enableNetworkLogs = enableNetworkLogs),
             splashModule(),
-            permissionsModule()
+            loginModule()
         )
     }
 }

@@ -30,6 +30,10 @@ uiAndroid = "1.7.7"
 settings = "1.0.2"
 cupertino = "0.1.0-alpha03"
 moko = "0.18.0"
+calfPermissions = "0.7.1"
+datastore = "1.1.1"
+connectivity = "1.2.0"
+
 
 
 [libraries]
@@ -87,6 +91,14 @@ cupertino = { module = "io.github.alexzhirkevich:cupertino-adaptive", version.re
 
 moko-permissions = { module = "dev.icerock.moko:permissions", version.ref = "moko" }
 moko-permissions-compose = { module = "dev.icerock.moko:permissions-compose", version.ref = "moko" }
+
+calf-permissions = { module = "com.mohamedrejeb.calf:calf-permissions", version.ref = "calfPermissions" }
+datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
+datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
+
+connectivity-core = { module = "dev.jordond.connectivity:connectivity-core", version.ref = "connectivity" }
+connectivity-device = { module = "dev.jordond.connectivity:connectivity-device", version.ref = "connectivity" }
+connectivity-compose-device = { module = "dev.jordond.connectivity:connectivity-compose-device", version.ref = "connectivity" }
 
 
 
