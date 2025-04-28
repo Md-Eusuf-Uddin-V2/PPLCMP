@@ -2,6 +2,7 @@ package ltd.v2.ppl.auth.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.devx.kdeviceinfo.DeviceInfoXState
 import dev.icerock.moko.permissions.Permission
 import dev.icerock.moko.permissions.PermissionsController
 import dev.jordond.connectivity.Connectivity
@@ -13,8 +14,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import ltd.v2.ppl.auth.domain.use_case.getCampaignListData
 import ltd.v2.ppl.auth.domain.use_case.getSignInData
 import ltd.v2.ppl.auth.domain.use_case.getUserInfoData
@@ -29,6 +28,7 @@ class LoginViewModel(
     private val controller: PermissionsController,
     private val appPref: AppPreference,
     private val connectivity: Connectivity,
+    private val deviceInfoXState: DeviceInfoXState
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LoginState())
@@ -169,11 +169,12 @@ class LoginViewModel(
 
     private fun callSignInApi(username: String, password: String) {
         viewModelScope.launch {
-             _state.update { it.copy(isLoginBtnLoading = true) }
+            _state.update { it.copy(isLoginBtnLoading = true) }
 
             val signInMap: Map<String, Any?> = mapOf(
                 "username" to username,
                 "password" to password,
+                "device_info" to getDeviceInfo(),
                 "platform" to 61
             )
 
@@ -181,10 +182,12 @@ class LoginViewModel(
             when (val result = getSignInData(signInMap)) {
                 is Result.Success -> {
                     _state.update { it.copy(isLoginBtnLoading = false) }
-                    AppConstant.accessList = result.data.accessList?.toMutableList() ?: mutableListOf()
+                    AppConstant.accessList =
+                        result.data.accessList?.toMutableList() ?: mutableListOf()
 
                     callUserApi(result.data.token)
                 }
+
                 is Result.Error -> {
                     println("Error result is ${result.error.message}")
                     _state.update { it.copy(isLoginBtnLoading = false) }
@@ -196,14 +199,14 @@ class LoginViewModel(
     private fun callUserApi(token: String) {
 
         viewModelScope.launch {
-            when(val result = getUserInfoData(token)){
+            when (val result = getUserInfoData(token)) {
                 is Result.Success -> {
                     AppConstant.accessList = result.data.accessList ?: mutableListOf()
-                    if(AppConstant.accessList.contains(AppConstant.CONTACT_MODULE)){
+                    if (AppConstant.accessList.contains(AppConstant.CONTACT_MODULE)) {
                         getCampaignList(token)
-                    }else if(AppConstant.accessList.contains(AppConstant.JOINT_CALL_MODULE)){
+                    } else if(AppConstant.accessList.contains(AppConstant.JOINT_CALL_MODULE)) {
 
-                    }else{
+                    } else {
                         _oneTimeState.emit(LoginState(noAccess = true))
                     }
 
@@ -218,12 +221,13 @@ class LoginViewModel(
         }
     }
 
-    private fun getCampaignList(token: String){
+    private fun getCampaignList(token: String) {
         viewModelScope.launch {
-            when(val result = getCampaignListData(token)){
+            when (val result = getCampaignListData(token)) {
                 is Result.Success -> {
-                    println(result.data[0].name)
+
                 }
+
                 is Result.Error -> {
                     println("Error result is ${result.error.message}")
                     _state.update { it.copy(isLoginBtnLoading = false) }
@@ -232,9 +236,57 @@ class LoginViewModel(
         }
     }
 
-
-
-
+    private fun getDeviceInfo(): Map<String, Any> {
+        return if (deviceInfoXState.isAndroid) {
+            val androidInfo = deviceInfoXState.androidInfo
+            mapOf(
+                "device_id" to androidInfo.androidId,
+                "app_version" to androidInfo.versionName,
+                "security_patch" to androidInfo.version.securityPatch,
+                "ui_version" to androidInfo.version.incremental,
+                "android_version" to androidInfo.version.release,
+                "api_version" to androidInfo.version.sdkInt.toString(),
+                "manufacture" to androidInfo.manufacturer,
+                "user_type" to "user",
+                "app_version_code" to androidInfo.versionCode.toInt(),
+                "model" to androidInfo.model,
+                "network_type" to "wifi",
+                "brand" to androidInfo.manufacturer
+            )
+        } else if (deviceInfoXState.isIos) {
+            val iosInfo = deviceInfoXState.iosInfo
+            mapOf(
+                "device_id" to iosInfo.identifierForVendor,
+                "app_version" to iosInfo.appVersion,
+                "security_patch" to "",
+                "ui_version" to iosInfo.appVersion,
+                "android_version" to iosInfo.systemVersion,
+                "api_version" to iosInfo.appShortVersion,
+                "manufacture" to iosInfo.systemName,
+                "user_type" to iosInfo.name,
+                "app_version_code" to 0,
+                "model" to iosInfo.model,
+                "network_type" to "wifi",
+                "brand" to iosInfo.localizedModel
+            )
+        } else {
+            // Return empty map for unknown devices
+            mapOf(
+                "device_id" to "",
+                "app_version" to "",
+                "security_patch" to "",
+                "ui_version" to "",
+                "android_version" to "",
+                "api_version" to "",
+                "manufacture" to "",
+                "user_type" to "",
+                "app_version_code" to 0,
+                "model" to "",
+                "network_type" to "",
+                "brand" to ""
+            )
+        }
+    }
 }
 
 

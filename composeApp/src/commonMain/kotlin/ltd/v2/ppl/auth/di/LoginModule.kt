@@ -17,9 +17,19 @@ fun loginModule() = module {
     factory { PermissionsControllerFactory(get()) }
     factory { DeviceInfoXState() }
     single { AppPreference(dataStore = get()) }
-    single<LogInRepo> { LoginInRepoImpl(httpClient = get(),deviceInfoXState = get(), appPref = get()) }
+    single<LogInRepo> { LoginInRepoImpl(httpClient = get(), appPref = get()) }
     single<getSignInData> { getSignInData(signInRepo = get()) }
     single<getUserInfoData> { getUserInfoData(loginInRepo = get()) }
     single<getCampaignListData> { getCampaignListData(campRepo = get()) }
-    viewModel { LoginViewModel(getSignInData = get(), getUserInfoData = get(), getCampaignListData = get(), controller = get(), appPref = get(), connectivity = get()) }
+    viewModel {
+        LoginViewModel(
+            getSignInData = get(),
+            getUserInfoData = get(),
+            getCampaignListData = get(),
+            controller = get(),
+            appPref = get(),
+            connectivity = get(),
+            deviceInfoXState = get()
+        )
+    }
 }

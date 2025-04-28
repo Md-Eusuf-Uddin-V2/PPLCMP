@@ -8,7 +8,7 @@ import ltd.v2.ppl.core.domain.DataError
 import ltd.v2.ppl.core.domain.Result
 
 interface LogInRepo {
-    suspend fun getSignInDataResponse(signInMap: Map<String, Any?>): Result<SignInDomainModel, DataError>
+    suspend fun getSignInDataResponse(signInMap: Map<String, Any>): Result<SignInDomainModel, DataError>
     suspend fun getUserInfoData(token: String): Result<UserDataDomainModel, DataError>
     suspend fun getCampaignListResponse(token: String): Result<List<CampaignListDomainModel>, DataError>
 }

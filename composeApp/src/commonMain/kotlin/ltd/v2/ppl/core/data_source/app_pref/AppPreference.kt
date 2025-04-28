@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
 import ltd.v2.ppl.auth.data.mappers.toDomain
 import ltd.v2.ppl.auth.data.response_model.SignInDataModel
+import ltd.v2.ppl.auth.domain.model.CampaignListDomainModel
 import ltd.v2.ppl.auth.domain.model.SignInDomainModel
 import ltd.v2.ppl.auth.domain.model.UserDataDomainModel
 import ltd.v2.ppl.common_utils.constants.PrefConstants
@@ -60,5 +61,20 @@ class AppPreference(private val dataStore: DataStore<Preferences>) {
 
         val userDataDomainModel = Json.decodeFromString<UserDataDomainModel>(userInfoData.first())
         return userDataDomainModel
+    }
+
+    suspend fun setCampaignData(campaignData: String){
+        dataStore.edit { prefs ->
+            prefs[stringPreferencesKey(PrefConstants.campaignData)] = campaignData
+        }
+    }
+
+    suspend fun getCampaignData(): List<CampaignListDomainModel> {
+        val campaignData = dataStore.data
+            .map { prefs ->
+                prefs[stringPreferencesKey(PrefConstants.campaignData)] ?: ""
+            }
+        val campaignList = Json.decodeFromString<List<CampaignListDomainModel>>(campaignData.first())
+        return campaignList
     }
 }

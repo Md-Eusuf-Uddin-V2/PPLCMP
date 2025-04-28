@@ -4,4 +4,5 @@ object PrefConstants {
     const val isFirstLogin = "isFirstLogin"
     const val loginData = "loginData"
     const val userInfoData = "userInfoData"
+    const val campaignData = "campaignData"
 }
