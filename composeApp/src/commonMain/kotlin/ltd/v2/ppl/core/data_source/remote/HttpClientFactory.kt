@@ -12,6 +12,7 @@ import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.request.headers
+import io.ktor.client.utils.EmptyContent.contentType
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.URLProtocol
@@ -40,11 +41,11 @@ object HttpClientFactory {
                 socketTimeoutMillis = 45_000 // 15 seconds for socket timeout
             }
 
-            // Retry configuration with exponential backoff
+           /* // Retry configuration with exponential backoff
             install(HttpRequestRetry) {
-                retryOnServerErrors(maxRetries = 2)
+                retryOnServerErrors(maxRetries = 1)
                 exponentialDelay(base = 200.0, maxDelayMs = 5000L)
-            }
+            }*/
 
 
 
@@ -57,7 +58,7 @@ object HttpClientFactory {
                 })
             }
 
-            // Logging for network requests and responses
+
             if (enableNetworkLogs) {
                 install(Logging) {
                     level = LogLevel.ALL
@@ -67,11 +68,8 @@ object HttpClientFactory {
                         }
                     }
                 }
-                Napier.base(DebugAntilog()) // Initialize Napier logging
+                Napier.base(DebugAntilog())
             }
-
-
-
 
 
             // Error handling for responses

@@ -25,7 +25,11 @@ fun AppNavigation() {
             SplashScreenRoot(
                 viewModel = viewModel,
                 onNavigateToLogin = {
-                    navController.navigate(Route.Login)
+                    navController.navigate(Route.Login){
+                        popUpTo(Route.Splash){
+                            inclusive = true
+                        }
+                    }
                 }
             )
         }

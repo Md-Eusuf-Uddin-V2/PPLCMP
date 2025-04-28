@@ -31,9 +31,11 @@ val Black2 = Color(0xFF000000)
 
 val White = Color(0xFFFFFFFF)
 
-val YellowAccent = Color(0xFFFFEB3B)
+val YellowAccent = Color(0xFFFF8800)
 val GreenAccent = Color(0xFF00E676)
 val OrangeAccent = Color(0xFFFF9800)
+
+val warningLight = Color(0xFFFFEB3B)
 
 val RedErrorDark = Color(0xFFB00020)
 val RedErrorLight = Color(0xFFEF5350)

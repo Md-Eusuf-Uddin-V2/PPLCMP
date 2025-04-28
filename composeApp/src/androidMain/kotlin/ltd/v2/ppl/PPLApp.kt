@@ -7,7 +7,10 @@ import org.koin.android.ext.koin.androidContext
 class PPLApp : Application()  {
     override fun onCreate() {
         super.onCreate()
-        multiplatform.network.cmptoast.AppContext.apply { set(applicationContext) }
+        multiplatform.network.cmptoast.AppContext.apply {
+            set(applicationContext)
+        }
+
         initKoin {
             androidContext(this@PPLApp)
         }

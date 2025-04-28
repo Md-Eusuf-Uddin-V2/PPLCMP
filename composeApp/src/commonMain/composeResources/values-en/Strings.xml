@@ -1,3 +1,17 @@
 <resources>
     <string name = "app_name">PPL CMP</string>
+    <string name = "info_title">Info Message</string>
+    <string name = "permission_required">Permission Required</string>
+    <string name = "grant_permissions">Grant Permissions</string>
+    <string name = "permission_denied">Permission Denied</string>
+    <string name = "info_msg">This app requires camera, microphone,location and storage permission to function properly. Please grant these permissions.</string>
+
+    <string name="warning_msg">Permissions were previously denied. If denied repeatedly, the system will stop showing the permission prompt. To continue using this feature, please enable the required permissions manually in the app settings.</string>"
+
+    <string name = "warning_title">Warning Message</string>
+    <string name = "username">Username</string>
+    <string name = "password">Password</string>
+    <string name = "login_button">Login</string>
+    <string name = "vtwo_ltd">V2 Technology Ltd</string>
+
 </resources>

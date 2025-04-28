@@ -36,7 +36,11 @@ val lightThemeColors = lightColorScheme(
     surfaceVariant = Grey1,
     onSurfaceVariant = Grey2,
 
-    outline = Grey2
+
+
+    outline = Grey2,
+
+
 )
 
 val darkThemeColors = darkColorScheme(
