@@ -7,7 +7,7 @@ import ltd.v2.ppl.core.domain.Result
 
 class getSignInData(private val signInRepo: LogInRepo) {
 
-    suspend  operator fun invoke(signInMap: Map<String, Any?>) : Result<SignInDomainModel, DataError> {
+    suspend  operator fun invoke(signInMap: Map<String, Any>) : Result<SignInDomainModel, DataError> {
         return  signInRepo.getSignInDataResponse(signInMap)
     }
 }

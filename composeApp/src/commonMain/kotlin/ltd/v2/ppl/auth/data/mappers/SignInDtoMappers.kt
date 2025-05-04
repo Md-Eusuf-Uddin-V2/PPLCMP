@@ -39,56 +39,58 @@ fun SignInDataModel.toDomain(): SignInDomainModel {
     )
 }
 
-private fun DailyCheckStatusDataModel?.toDomain(): DailyCheckStatusDomain {
+ fun DailyCheckStatusDataModel?.toDomain(): DailyCheckStatusDomain {
     return DailyCheckStatusDomain(
         checkInStatus = this?.checkInStatus,
         checkInTime = this?.checkInTime,
+        checkInDate = this?.checkInDate,
         checkOutStatus = this?.checkOutStatus,
-        checkOutTime = this?.checkOutTime
+        checkOutTime = this?.checkOutTime,
+        checkOutDate = this?.checkOutDate
     )
 }
 
-private fun ThemeDataModel?.toDomain(): ThemeDomain {
+ fun ThemeDataModel?.toDomain(): ThemeDomain {
     return ThemeDomain(
         primaryColor = this?.primaryColor,
         organizationLogoUrl = this?.organizationLogoUrl
     )
 }
 
-private fun OrganizationSettingsDataModel?.toDomain(): OrganizationSettingsDomain {
+ fun OrganizationSettingsDataModel?.toDomain(): OrganizationSettingsDomain {
     return OrganizationSettingsDomain(
         ffModule = this?.ffModule?.toDomain(),
         attendanceModule = this?.attendanceModule?.toDomain()
     )
 }
 
-private fun FFModuleSettingsDataModel?.toDomain(): FFModuleSettingsDomain {
+ fun FFModuleSettingsDataModel?.toDomain(): FFModuleSettingsDomain {
     return FFModuleSettingsDomain(
         employmentTypes = this?.employmentTypes?.map { it.toDomain() }
     )
 }
 
-private fun EmploymentTypeDataModel?.toDomain(): EmploymentTypeDomain {
+ fun EmploymentTypeDataModel?.toDomain(): EmploymentTypeDomain {
     return EmploymentTypeDomain(
         id = this?.id,
         name = this?.name
     )
 }
 
-private fun AttendanceModuleSettingsDataModel?.toDomain(): AttendanceModuleSettingsDomain {
+ fun AttendanceModuleSettingsDataModel?.toDomain(): AttendanceModuleSettingsDomain {
     return AttendanceModuleSettingsDomain(
         attendance = this?.attendance?.toDomain()
     )
 }
 
-private fun AttendanceTimingDataModel?.toDomain(): AttendanceTimingDomain {
+ fun AttendanceTimingDataModel?.toDomain(): AttendanceTimingDomain {
     return AttendanceTimingDomain(
         checkInTime = this?.checkInTime,
         checkOutTime = this?.checkOutTime
     )
 }
 
-private fun AppVersionDataModel?.toDomain(): AppVersionDomain {
+ fun AppVersionDataModel?.toDomain(): AppVersionDomain {
     return AppVersionDomain(
         forceUpdate = this?.forceUpdate,
         version = this?.version,

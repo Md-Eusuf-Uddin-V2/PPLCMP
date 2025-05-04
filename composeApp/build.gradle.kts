@@ -79,11 +79,8 @@ kotlin {
             api(libs.napier)
             implementation(libs.cmptoast)
             implementation(libs.remember.settings)
-            implementation(libs.cupertino)
             api(libs.moko.permissions)
             api(libs.moko.permissions.compose)
-
-            implementation(libs.calf.permissions)
 
             implementation(libs.datastore.preferences)
             implementation(libs.datastore)
@@ -127,6 +124,11 @@ android {
     buildTypes {
         getByName("release") {
             isMinifyEnabled = false
+            isShrinkResources = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),  // Default ProGuard file
+                "proguard-rules.pro"  // Custom ProGuard rules
+            )
         }
     }
     compileOptions {

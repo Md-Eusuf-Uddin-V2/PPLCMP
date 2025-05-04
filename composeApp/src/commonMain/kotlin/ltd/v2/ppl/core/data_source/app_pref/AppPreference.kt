@@ -10,8 +10,11 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
 import ltd.v2.ppl.auth.data.mappers.toDomain
+import ltd.v2.ppl.auth.data.response_model.CampaignListModel
+import ltd.v2.ppl.auth.data.response_model.DailyCheckStatusDataModel
 import ltd.v2.ppl.auth.data.response_model.SignInDataModel
 import ltd.v2.ppl.auth.domain.model.CampaignListDomainModel
+import ltd.v2.ppl.auth.domain.model.DailyCheckStatusDomain
 import ltd.v2.ppl.auth.domain.model.SignInDomainModel
 import ltd.v2.ppl.auth.domain.model.UserDataDomainModel
 import ltd.v2.ppl.common_utils.constants.PrefConstants
@@ -30,7 +33,7 @@ class AppPreference(private val dataStore: DataStore<Preferences>) {
         }
     }
 
-    suspend fun setLoginData(loginData: String){
+    suspend fun setLoginData(loginData: String) {
         dataStore.edit { prefs ->
             prefs[stringPreferencesKey(PrefConstants.loginData)] = loginData
         }
@@ -47,7 +50,24 @@ class AppPreference(private val dataStore: DataStore<Preferences>) {
         return signInDomainModel.toDomain()
     }
 
-    suspend fun setUserInfoData(userInfoData: String){
+    suspend fun setAttendanceInfo(attendanceInfo: String) {
+        dataStore.edit { prefs ->
+            prefs[stringPreferencesKey(PrefConstants.attendanceInfo)] = attendanceInfo
+        }
+    }
+
+    suspend fun getAttendanceInfo(): DailyCheckStatusDomain {
+        val attendanceInfo = dataStore.data
+            .map { prefs ->
+                prefs[stringPreferencesKey(PrefConstants.attendanceInfo)] ?: ""
+            }
+
+        val dailyCheck = Json.decodeFromString<DailyCheckStatusDataModel>(attendanceInfo.first())
+
+        return dailyCheck.toDomain()
+    }
+
+    suspend fun setUserInfoData(userInfoData: String) {
         dataStore.edit { prefs ->
             prefs[stringPreferencesKey(PrefConstants.userInfoData)] = userInfoData
         }
@@ -63,7 +83,7 @@ class AppPreference(private val dataStore: DataStore<Preferences>) {
         return userDataDomainModel
     }
 
-    suspend fun setCampaignData(campaignData: String){
+    suspend fun setCampaignData(campaignData: String) {
         dataStore.edit { prefs ->
             prefs[stringPreferencesKey(PrefConstants.campaignData)] = campaignData
         }
@@ -74,7 +94,39 @@ class AppPreference(private val dataStore: DataStore<Preferences>) {
             .map { prefs ->
                 prefs[stringPreferencesKey(PrefConstants.campaignData)] ?: ""
             }
-        val campaignList = Json.decodeFromString<List<CampaignListDomainModel>>(campaignData.first())
-        return campaignList
+        val camListModel = Json.decodeFromString<List<CampaignListModel>>(campaignData.first())
+
+        return camListModel.map { it.toDomain() }
+    }
+
+    suspend fun storeCampaignId(campId: String) {
+        dataStore.edit { prefs ->
+            prefs[stringPreferencesKey(PrefConstants.campaignId)] = campId
+        }
+    }
+
+    suspend fun getCampaignId(): String {
+        val campaignId = dataStore.data
+            .map { prefs ->
+                prefs[stringPreferencesKey(PrefConstants.campaignId)] ?: ""
+            }
+
+        return campaignId.first()
+    }
+
+    suspend fun storeCampaignName(campaignName: String) {
+        dataStore.edit { prefs ->
+            prefs[stringPreferencesKey(PrefConstants.campaignName)] = campaignName
+        }
+    }
+
+    suspend fun getCampaignName(): String {
+        val campaignName = dataStore.data
+            .map { prefs ->
+                prefs[stringPreferencesKey(PrefConstants.campaignName)] ?: ""
+            }
+
+        return campaignName.first()
+
     }
 }

@@ -3,15 +3,28 @@ package ltd.v2.ppl.common_utils.utils
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 
-fun convertMapToJsonObject(request: Map<String, Any>): JsonObject {
-    val jsonObject = JsonObject(request.mapValues { entry ->
-        when (val value = entry.value) {
+import kotlinx.serialization.json.*
+
+fun convertMapToJsonObject(request: Map<String, Any?>): JsonObject {
+    fun convertValue(value: Any?): JsonElement {
+        return when (value) {
+            null -> JsonNull
             is String -> JsonPrimitive(value)
             is Int -> JsonPrimitive(value)
             is Boolean -> JsonPrimitive(value)
-            is Map<*, *> -> JsonObject((value as Map<String, Any>).mapValues { JsonPrimitive(it.value.toString()) })
-            else -> JsonPrimitive(value.toString())
+            is Double -> JsonPrimitive(value)
+            is Float -> JsonPrimitive(value)
+            is Long -> JsonPrimitive(value)
+            is Map<*, *> -> {
+                JsonObject((value as Map<String, Any?>).mapValues { (_, v) -> convertValue(v) })
+            }
+            is List<*> -> {
+                JsonArray(value.map { convertValue(it) })
+            }
+            else -> JsonPrimitive(value.toString()) // fallback
         }
-    })
-    return jsonObject
+    }
+
+    return JsonObject(request.mapValues { (_, v) -> convertValue(v) })
 }
+

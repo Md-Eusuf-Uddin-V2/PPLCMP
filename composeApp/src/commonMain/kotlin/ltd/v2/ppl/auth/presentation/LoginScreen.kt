@@ -35,6 +35,7 @@ import dev.icerock.moko.permissions.compose.BindEffect
 import ltd.v2.ppl.auth.presentation.components.LoginButton
 import ltd.v2.ppl.auth.presentation.components.PasswordTextField
 import ltd.v2.ppl.auth.presentation.components.UserNameTextField
+import ltd.v2.ppl.common_utils.components.DownloadDialogCompose
 import ltd.v2.ppl.common_utils.components.InfoDialogCompose
 import ltd.v2.ppl.common_utils.components.WarningDialogCompose
 import ltd.v2.ppl.common_utils.utils.getAppVersionCode
@@ -85,18 +86,6 @@ fun LoginScreenRoot(
 
         when {
             state.showPermissionInfoPopup -> {
-                /*AlertDialog(
-                    onDismissRequest = {},
-                    title = { Text("Permissions Required") },
-                    text = { Text("This app needs permissions to function correctly. Please grant them.") },
-                    confirmButton = {
-                        TextButton(onClick = {
-                            viewModel.processIntent(LoginEvents.RequestPermissions)
-                        }) {
-                            Text("OK")
-                        }
-                    }
-                )*/
                 InfoDialogCompose(
                     showDialog = state.showPermissionInfoPopup,
                     setDismissDialog = {
@@ -113,19 +102,6 @@ fun LoginScreenRoot(
             }
 
             state.permissionDeniedPopup -> {
-                /*AlertDialog(
-                    onDismissRequest = {},
-                    title = { Text("Permissions Denied") },
-                    text = { Text("This app needs permissions to function correctly. Please grant them.") },
-                    confirmButton = {
-                        TextButton(onClick = {
-                            viewModel.processIntent(LoginEvents.RequestPermissionsFromDenied)
-                        }) {
-                            Text("OK")
-                        }
-                    }
-                )*/
-
                 WarningDialogCompose(
                     showDialog = state.permissionDeniedPopup,
                     setDismissDialog = {
@@ -141,11 +117,20 @@ fun LoginScreenRoot(
                 )
             }
 
-            state.noInternetAvailable -> {
-                showToast(
-                    "No Internet Available"
+            state.isDownloadDialogShow -> {
+                DownloadDialogCompose(
+                    showDialog = state.isDownloadDialogShow,
+                    setDismissDialog = {
+
+                    },
+                    downloadList = state.downloadList,
+                    onFilesDownloadStart = { mIndex ->
+                        viewModel.processIntent(LoginEvents.OnFilesDownloadStart(index = mIndex))
+                    }
                 )
             }
+
+
         }
 
         LoginScreen(
@@ -237,10 +222,13 @@ fun LoginScreen(
         Spacer(modifier = modifier.height(32.dp))
 
         LoginButton(
-            onClick = onLogin,
+            onClick = {
+                keyboardController?.hide()
+                onLogin()
+            },
             modifier = Modifier.align(Alignment.CenterHorizontally),
             enabled = true,
-            isLoading = state.isLoginBtnLoading
+            isLoading = false
         )
 
         Spacer(modifier = modifier.height(42.dp))

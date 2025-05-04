@@ -70,12 +70,18 @@ data class DailyCheckStatusDataModel(
     val checkOutStatus: Boolean? = null,
 
     @SerialName("checkOutTime")
-    val checkOutTime: String? = null
+    val checkOutTime: String? = null,
+
+    @SerialName("checkInDate")
+    val checkInDate: String? = null,
+
+    @SerialName("checkOutDate")
+    val checkOutDate: String? = null
 )
 
 @Serializable
 data class ThemeDataModel(
-    @SerialName("priamry_color") // Note: Typo in backend "priamry_color" - stay same if backend typo
+    @SerialName("priamry_color")
     val primaryColor: String? = null,
 
     @SerialName("org_logo")

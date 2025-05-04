@@ -5,4 +5,6 @@ sealed interface LoginEvents {
       data object RequestPermissions : LoginEvents
       data object RequestPermissionsFromDenied : LoginEvents
       data object OnLoginClicked : LoginEvents
+      data class OnFilesDownloadStart(var index: Int) : LoginEvents
+
 }

@@ -6,6 +6,17 @@ import com.devx.kdeviceinfo.DeviceInfoXState
 import dev.icerock.moko.permissions.Permission
 import dev.icerock.moko.permissions.PermissionsController
 import dev.jordond.connectivity.Connectivity
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.plugins.timeout
+import io.ktor.client.request.prepareGet
+import io.ktor.client.statement.HttpStatement
+import io.ktor.http.contentLength
+import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.cancel
+import io.ktor.utils.io.readAvailable
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -14,21 +25,43 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import ltd.v2.ppl.auth.domain.model.DownloadModel
+import ltd.v2.ppl.auth.domain.model.DownloadProgress
+import ltd.v2.ppl.auth.domain.model.MediaFile
+import ltd.v2.ppl.auth.domain.use_case.GetAllCampaignData
+import ltd.v2.ppl.auth.domain.use_case.GetCampaignDataById
+import ltd.v2.ppl.auth.domain.use_case.InsertCampaignData
+import ltd.v2.ppl.auth.domain.use_case.UpdateCampaignData
 import ltd.v2.ppl.auth.domain.use_case.getCampaignListData
 import ltd.v2.ppl.auth.domain.use_case.getSignInData
+import ltd.v2.ppl.auth.domain.use_case.getSurveyModelData
 import ltd.v2.ppl.auth.domain.use_case.getUserInfoData
 import ltd.v2.ppl.common_utils.constants.AppConstant
+import ltd.v2.ppl.core.app_url.AppUrl
 import ltd.v2.ppl.core.data_source.app_pref.AppPreference
+import ltd.v2.ppl.core.data_source.createFileOutputStream
+import ltd.v2.ppl.core.data_source.remote.HttpClientFactory
 import ltd.v2.ppl.core.domain.Result
+import okio.Sink
+import okio.buffer
+import okio.use
+import kotlin.time.Duration.Companion.minutes
 
 class LoginViewModel(
+    private val getAllCampaignData: GetAllCampaignData,
+    private val updateCampaignData: UpdateCampaignData,
+    private val insertCampData: InsertCampaignData,
+    private val getCampaignDataById: GetCampaignDataById,
     private val getSignInData: getSignInData,
     private val getUserInfoData: getUserInfoData,
     private val getCampaignListData: getCampaignListData,
+    private val getSurveyDataResponse: getSurveyModelData,
     private val controller: PermissionsController,
     private val appPref: AppPreference,
     private val connectivity: Connectivity,
-    private val deviceInfoXState: DeviceInfoXState
+    private val deviceInfoXState: DeviceInfoXState,
+    private val httpClient: HttpClient,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LoginState())
@@ -36,6 +69,8 @@ class LoginViewModel(
 
     private val _oneTimeState = MutableSharedFlow<LoginState>()
     val oneTimeState: SharedFlow<LoginState> = _oneTimeState
+
+    var campCount = 0
 
 
     private val requiredPermissions = listOf(
@@ -47,6 +82,7 @@ class LoginViewModel(
     )
 
     init {
+        campCount = 0
         checkFirstLogin()
     }
 
@@ -61,10 +97,14 @@ class LoginViewModel(
 
     fun processIntent(intent: LoginEvents) {
         when (intent) {
-            LoginEvents.RequestPermissions -> handleFirstPermissionRequest()
-            LoginEvents.RequestPermissionsFromDenied -> requestPermissionsFromDenied()
-            LoginEvents.OnLoginClicked -> {
+            is LoginEvents.RequestPermissions -> handleFirstPermissionRequest()
+            is LoginEvents.RequestPermissionsFromDenied -> requestPermissionsFromDenied()
+            is LoginEvents.OnLoginClicked -> {
                 checkPermissionsBeforeLogin()
+            }
+
+            is LoginEvents.OnFilesDownloadStart -> {
+                startFilesDownload(intent.index)
             }
         }
     }
@@ -169,28 +209,62 @@ class LoginViewModel(
 
     private fun callSignInApi(username: String, password: String) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoginBtnLoading = true) }
+            campCount = 0
+            _state.update { it.copy(isDownloadDialogShow = true) }
 
-            val signInMap: Map<String, Any?> = mapOf(
+            _state.update {
+                it.copy(
+                    downloadList = mutableListOf(
+                        DownloadModel(
+                            type = "api",
+                            title = "Getting Information",
+                            downloadProgress = DownloadProgress(
+                                currentFileIndex = 0,
+                                progress = 0.0,
+                                totalFiles = 4
+                            )
+
+                        )
+                    )
+                )
+            }
+
+            val signInMap: Map<String, Any> = mapOf(
                 "username" to username,
                 "password" to password,
-                "device_info" to getDeviceInfo(),
+                "deviceInfo" to getDeviceInfo(),
                 "platform" to 61
             )
 
 
             when (val result = getSignInData(signInMap)) {
                 is Result.Success -> {
-                    _state.update { it.copy(isLoginBtnLoading = false) }
                     AppConstant.accessList =
                         result.data.accessList?.toMutableList() ?: mutableListOf()
+
+                    _state.update {
+                        it.copy(
+                            downloadList = mutableListOf(
+                                DownloadModel(
+                                    type = "api",
+                                    title = "Getting Information",
+                                    downloadProgress = DownloadProgress(
+                                        currentFileIndex = 1,
+                                        progress = 0.25,
+                                        totalFiles = 4
+                                    )
+
+                                )
+                            )
+                        )
+                    }
 
                     callUserApi(result.data.token)
                 }
 
                 is Result.Error -> {
                     println("Error result is ${result.error.message}")
-                    _state.update { it.copy(isLoginBtnLoading = false) }
+                    _state.update { it.copy(isDownloadDialogShow = false) }
                 }
             }
         }
@@ -202,11 +276,28 @@ class LoginViewModel(
             when (val result = getUserInfoData(token)) {
                 is Result.Success -> {
                     AppConstant.accessList = result.data.accessList ?: mutableListOf()
+                    _state.update {
+                        it.copy(
+                            downloadList = mutableListOf(
+                                DownloadModel(
+                                    type = "api",
+                                    title = "Getting Information",
+                                    downloadProgress = DownloadProgress(
+                                        currentFileIndex = 2,
+                                        progress = 0.50,
+                                        totalFiles = 4
+                                    )
+
+                                )
+                            )
+                        )
+                    }
+
                     if (AppConstant.accessList.contains(AppConstant.CONTACT_MODULE)) {
                         getCampaignList(token)
-                    } else if(AppConstant.accessList.contains(AppConstant.JOINT_CALL_MODULE)) {
+                    } /*else if (AppConstant.accessList.contains(AppConstant.JOINT_CALL_MODULE)) {
 
-                    } else {
+                    }*/ else {
                         _oneTimeState.emit(LoginState(noAccess = true))
                     }
 
@@ -215,7 +306,7 @@ class LoginViewModel(
 
                 is Result.Error -> {
                     println("Error result is ${result.error.message}")
-                    _state.update { it.copy(isLoginBtnLoading = false) }
+                    _state.update { it.copy(isDownloadDialogShow = false) }
                 }
             }
         }
@@ -225,14 +316,312 @@ class LoginViewModel(
         viewModelScope.launch {
             when (val result = getCampaignListData(token)) {
                 is Result.Success -> {
+                    _state.update {
+                        it.copy(
+                            downloadList = mutableListOf(
+                                DownloadModel(
+                                    type = "api",
+                                    title = "Getting Information",
+                                    downloadProgress = DownloadProgress(
+                                        currentFileIndex = 3,
+                                        progress = 0.75,
+                                        totalFiles = 4
+                                    )
+
+                                )
+                            )
+                        )
+                    }
+                    getSurveyData(token, result.data[campCount].id!!)
+                }
+
+                is Result.Error -> {
+                    println("Error result is ${result.error.message}")
+                    _state.update { it.copy(isDownloadDialogShow = false) }
+                }
+            }
+        }
+    }
+
+    private fun getSurveyData(token: String, campaignId: Int) {
+        viewModelScope.launch {
+            when (val result = getSurveyDataResponse(token, campaignId)) {
+                is Result.Success -> {
+                    withContext(Dispatchers.IO) {
+                        when (val campData = getCampaignDataById(
+                            campId = campaignId.toString(),
+                            userId = appPref.getLoginData().id!!.toString()
+                        )) {
+                            is Result.Success -> {
+                                if (campData.data == null) {
+                                    when (val insertResult = insertCampData(
+                                        campData = result.data,
+                                        campaignId = campaignId.toString(),
+                                        userId = appPref.getLoginData().id!!.toString(),
+                                        accessId = AppConstant.CONTACT_MODULE.toString()
+                                    )) {
+                                        is Result.Success -> {
+                                            campCount++
+                                            if (appPref.getCampaignData().size == campCount) {
+                                                appPref.storeCampaignId(appPref.getCampaignData()[0].id.toString())
+                                                appPref.storeCampaignName(appPref.getCampaignData()[0].name.toString())
+                                                _state.update { it.copy(isDownloadDialogShow = false) }
+                                            } else {
+                                                getSurveyData(
+                                                    token = token,
+                                                    campaignId = appPref.getCampaignData()[campCount].id!!
+                                                )
+                                            }
+                                            println("Insert data ${insertResult.data}")
+                                        }
+
+                                        is Result.Error -> {
+                                            _state.update { it.copy(isDownloadDialogShow = false) }
+                                        }
+
+                                    }
+                                } else {
+                                    when (val isUpdated = updateCampaignData(
+                                        campData = result.data, campaignId = campaignId.toString(),
+                                        userId = appPref.getLoginData().id!!.toString()
+                                    )) {
+                                        is Result.Success -> {
+                                            println("Update dataaaaaaa ${isUpdated.data}")
+                                            campCount++
+                                            if (appPref.getCampaignData().size == campCount) {
+                                                appPref.storeCampaignId(appPref.getCampaignData()[0].id.toString())
+                                                appPref.storeCampaignName(appPref.getCampaignData()[0].name.toString())
+                                                _state.update {
+                                                    it.copy(
+                                                        downloadList = mutableListOf(
+                                                            DownloadModel(
+                                                                type = "api",
+                                                                title = "Getting Information",
+                                                                downloadProgress = DownloadProgress(
+                                                                    currentFileIndex = 4,
+                                                                    progress = 1.00,
+                                                                    totalFiles = 4
+                                                                )
+
+                                                            )
+                                                        )
+                                                    )
+                                                }
+
+                                                getDownloadFiles()
+
+                                            } else {
+                                                getSurveyData(
+                                                    token = token,
+                                                    campaignId = appPref.getCampaignData()[campCount].id!!
+                                                )
+                                            }
+                                        }
+
+                                        is Result.Error -> {
+                                            _state.update { it.copy(isDownloadDialogShow = false) }
+                                        }
+                                    }
+                                }
+                            }
+
+                            is Result.Error -> {
+                                _state.update { it.copy(isDownloadDialogShow = false) }
+                            }
+                        }
+                    }
 
                 }
 
                 is Result.Error -> {
                     println("Error result is ${result.error.message}")
-                    _state.update { it.copy(isLoginBtnLoading = false) }
+                    _state.update { it.copy(isDownloadDialogShow = false) }
                 }
             }
+
+        }
+    }
+
+
+    private fun getDownloadFiles() {
+        viewModelScope.launch(Dispatchers.IO) {
+
+            val imageList: MutableList<MediaFile> = mutableListOf()
+            val videoList: MutableList<MediaFile> = mutableListOf(
+                MediaFile(url = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"),
+                MediaFile(url = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4")
+            )
+
+            when (val result = getAllCampaignData(appPref.getLoginData().id!!.toString())) {
+                is Result.Success -> {
+                    if (result.data.isNotEmpty()) {
+                        for (i in result.data.indices) {
+                            result.data[i]?.image?.map {
+                                imageList.add(element = MediaFile("${AppUrl.DOWNLOAD_BASE_URL}$it"))
+                            }
+
+                            result.data[i]?.video?.map {
+                                videoList.add(element = MediaFile("${AppUrl.DOWNLOAD_BASE_URL}$it"))
+                            }
+
+                        }
+
+                        if (imageList.isNotEmpty()) {
+                            _state.update {
+                                val updatedList = it.downloadList.toMutableList()
+                                updatedList.add(
+                                    DownloadModel(
+                                        type = "image",
+                                        title = "Images",
+                                        mediaFiles = imageList,
+                                        downloadProgress = DownloadProgress(
+                                            currentFileIndex = 0,
+                                            progress = 0.0,
+                                            totalFiles = 0
+
+                                        )
+                                    )
+                                )
+                                it.copy(downloadList = updatedList)
+                            }
+                        }
+
+                        if (videoList.isNotEmpty()) {
+                            _state.update {
+                                val updatedList = it.downloadList.toMutableList()
+                                updatedList.add(
+                                    DownloadModel(
+                                        type = "video",
+                                        title = "Videos",
+                                        mediaFiles = videoList,
+                                        downloadProgress = DownloadProgress(
+                                            currentFileIndex = 0,
+                                            progress = 0.0,
+                                            totalFiles = 0
+                                        )
+                                    )
+                                )
+                                it.copy(downloadList = updatedList)
+                            }
+                        }
+
+
+                    }
+                }
+
+                is Result.Error -> {
+                    println("Error result is ${result.error.message}")
+                }
+            }
+
+        }
+
+    }
+
+
+    private fun startFilesDownload(index: Int) {
+        val currentModel = state.value.downloadList[index]
+        val updatedModel = currentModel.copy(
+            downloadProgress = currentModel.downloadProgress?.copy(
+                currentFileIndex = 0,
+                progress = 0.0,
+                totalFiles = currentModel.mediaFiles?.size ?: 0
+            )
+        )
+
+        _state.update {
+            val updatedList = it.downloadList.toMutableList()
+            updatedList[index] = updatedModel
+            it.copy(downloadList = updatedList)
+        }
+
+        startDownload(updatedModel, index)
+    }
+
+
+    private fun startDownload(downloadModel: DownloadModel, index: Int) {
+        viewModelScope.launch {
+            val fileCount = downloadModel.mediaFiles?.size ?: return@launch
+            val fileProgressList = MutableList(fileCount) { 0f }
+            var currFileIndex = 1
+
+            downloadModel.mediaFiles.forEachIndexed { fileIndex, mediaFile ->
+                val output = createFileOutputStream(mediaFile.url.substringAfterLast("/"))
+                downloadFileWithProgress(mediaFile.url, output) { progress, contentLen ->
+                    fileProgressList[fileIndex] = progress
+                    val totalProgress = fileProgressList.sum().coerceIn(0f, 1f)
+                  //  println("Media file ${mediaFile.url} and progress is $progress")
+                    updateDownloadState(fileProgressList.size, totalProgress.toDouble(), index, fileCount)
+                }
+
+
+            }
+        }
+    }
+
+
+    private fun updateDownloadState(
+        fileIndex: Int,
+        progress: Double,
+        index: Int,
+        totalSize: Int
+    ) {
+        _state.update { currentState ->
+            val updatedList = currentState.downloadList.toMutableList()
+
+            val updatedItem = updatedList[index].copy(
+                downloadProgress = DownloadProgress(
+                    currentFileIndex = fileIndex,
+                    progress = progress.toDouble(),
+                    totalFiles = totalSize
+                )
+            )
+            updatedList[index] = updatedItem
+
+            currentState.copy(downloadList = updatedList)
+        }
+    }
+
+
+    private suspend fun downloadFileWithProgress(
+        url: String,
+        outputStream: Sink,
+        onProgress: (Float, Long) -> Unit
+    ) {
+        try {
+            val client: HttpClient = HttpClientFactory.makeClient(false)
+            val statement: HttpStatement = client.prepareGet(url) {
+                timeout {
+                    requestTimeoutMillis = 30.minutes.inWholeMilliseconds
+                }
+
+            }
+            statement.execute { response ->
+                val channel: ByteReadChannel = response.body()
+                val contentLen = response.contentLength() ?: -1L
+                val buffer = ByteArray(1024 * 100)
+
+                outputStream.buffer().use { sink ->
+                    var totalRead = 0L
+                    while (!channel.isClosedForRead) {
+                        val bytesRead = channel.readAvailable(buffer)
+                        if (bytesRead <= 0) break
+                        sink.write(buffer, 0, bytesRead)
+                        totalRead += bytesRead
+                        println("Download progress: $totalRead / $contentLen and Url is $url")
+                        if (contentLen > 0) {
+                            val progress = (totalRead / contentLen.toFloat())
+                            onProgress(progress, contentLen)
+                        }
+                    }
+
+                    sink.flush()
+                    onProgress(1f, contentLen)
+                }
+                channel.cancel()
+            }
+        } catch (e: Exception) {
+            println("Download failed: $e")
         }
     }
 
@@ -248,7 +637,7 @@ class LoginViewModel(
                 "api_version" to androidInfo.version.sdkInt.toString(),
                 "manufacture" to androidInfo.manufacturer,
                 "user_type" to "user",
-                "app_version_code" to androidInfo.versionCode.toInt(),
+                "app_version_code" to androidInfo.versionCode.toString(),
                 "model" to androidInfo.model,
                 "network_type" to "wifi",
                 "brand" to androidInfo.manufacturer
@@ -270,7 +659,6 @@ class LoginViewModel(
                 "brand" to iosInfo.localizedModel
             )
         } else {
-            // Return empty map for unknown devices
             mapOf(
                 "device_id" to "",
                 "app_version" to "",

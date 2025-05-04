@@ -9,6 +9,6 @@ fun MainViewController() = ComposeUIViewController(
     configure = { initKoin() }
 ) {
 
-    App(ContextFactory(this))
+    App()
 
 }

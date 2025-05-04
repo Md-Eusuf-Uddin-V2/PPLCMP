@@ -21,8 +21,10 @@ data class SignInDomainModel(
 data class DailyCheckStatusDomain(
     val checkInStatus: Boolean? = null,
     val checkInTime: String? = null,
+    val checkInDate: String? = null,
     val checkOutStatus: Boolean? = null,
-    val checkOutTime: String? = null
+    val checkOutTime: String? = null,
+    val checkOutDate: String? = null
 )
 
 data class ThemeDomain(
