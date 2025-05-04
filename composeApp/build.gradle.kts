@@ -93,6 +93,7 @@ kotlin {
             implementation(libs.material.icons.extended)
 
             implementation(libs.kdeviceinfo)
+            implementation(libs.multiplatform.paths)
         }
 
         nativeMain.dependencies {

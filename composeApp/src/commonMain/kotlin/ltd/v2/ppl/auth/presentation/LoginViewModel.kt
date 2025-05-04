@@ -71,6 +71,8 @@ class LoginViewModel(
     val oneTimeState: SharedFlow<LoginState> = _oneTimeState
 
     var campCount = 0
+    var currentMediaFile = 0
+    var totalMediaFile = 0
 
 
     private val requiredPermissions = listOf(
@@ -446,9 +448,19 @@ class LoginViewModel(
     private fun getDownloadFiles() {
         viewModelScope.launch(Dispatchers.IO) {
 
-            val imageList: MutableList<MediaFile> = mutableListOf()
+            val imageList: MutableList<MediaFile> = mutableListOf(
+                MediaFile("https://user-images.githubusercontent.com/132100144/235250068-74c909ff-8a2c-4539-990f-4999ecd8e379.png"),
+                MediaFile("https://user-images.githubusercontent.com/132100144/235250068-74c909ff-8a2c-4539-990f-4999ecd8e379.png"),
+                MediaFile("https://user-images.githubusercontent.com/132100144/235250068-74c909ff-8a2c-4539-990f-4999ecd8e379.png"),
+                MediaFile("https://user-images.githubusercontent.com/132100144/235250068-74c909ff-8a2c-4539-990f-4999ecd8e379.png"),
+                MediaFile("https://user-images.githubusercontent.com/132100144/235250068-74c909ff-8a2c-4539-990f-4999ecd8e379.png"),
+                MediaFile("https://user-images.githubusercontent.com/132100144/235250068-74c909ff-8a2c-4539-990f-4999ecd8e379.png"),
+                MediaFile("https://user-images.githubusercontent.com/132100144/235250068-74c909ff-8a2c-4539-990f-4999ecd8e379.png"),
+                MediaFile("https://user-images.githubusercontent.com/132100144/235250068-74c909ff-8a2c-4539-990f-4999ecd8e379.png"),
+                MediaFile("https://user-images.githubusercontent.com/132100144/235250068-74c909ff-8a2c-4539-990f-4999ecd8e379.png")
+            )
             val videoList: MutableList<MediaFile> = mutableListOf(
-                MediaFile(url = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"),
+                MediaFile(url = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4"),
                 MediaFile(url = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4")
             )
 
@@ -467,6 +479,7 @@ class LoginViewModel(
                         }
 
                         if (imageList.isNotEmpty()) {
+                            totalMediaFile += imageList.size
                             _state.update {
                                 val updatedList = it.downloadList.toMutableList()
                                 updatedList.add(
@@ -487,6 +500,7 @@ class LoginViewModel(
                         }
 
                         if (videoList.isNotEmpty()) {
+                            totalMediaFile += videoList.size
                             _state.update {
                                 val updatedList = it.downloadList.toMutableList()
                                 updatedList.add(
@@ -503,6 +517,10 @@ class LoginViewModel(
                                 )
                                 it.copy(downloadList = updatedList)
                             }
+                        }
+
+                        if (state.value.downloadList.size == 1) {
+                            println("No files to download")
                         }
 
 
@@ -542,20 +560,29 @@ class LoginViewModel(
     private fun startDownload(downloadModel: DownloadModel, index: Int) {
         viewModelScope.launch {
             val fileCount = downloadModel.mediaFiles?.size ?: return@launch
-            val fileProgressList = MutableList(fileCount) { 0f }
-            var currFileIndex = 1
-
+            var progressTemp = 0.0
+            var progressTempRecent = 0.0
             downloadModel.mediaFiles.forEachIndexed { fileIndex, mediaFile ->
                 val output = createFileOutputStream(mediaFile.url.substringAfterLast("/"))
-                downloadFileWithProgress(mediaFile.url, output) { progress, contentLen ->
-                    fileProgressList[fileIndex] = progress
-                    val totalProgress = fileProgressList.sum().coerceIn(0f, 1f)
-                  //  println("Media file ${mediaFile.url} and progress is $progress")
-                    updateDownloadState(fileProgressList.size, totalProgress.toDouble(), index, fileCount)
+
+                downloadFileWithProgress(mediaFile.url, output) { progress ->
+                    progressTempRecent = (progress / (fileCount.toDouble() / 100.0)) / 100.0
+                    updateDownloadState(
+                        fileIndex + 1,
+                        progressTemp + progressTempRecent,
+                        index,
+                        fileCount
+                    )
                 }
 
+                currentMediaFile++
+                progressTemp += progressTempRecent
 
             }
+
+            println("Total Media File is $totalMediaFile and Current Media File is $currentMediaFile")
+
+
         }
     }
 
@@ -586,7 +613,7 @@ class LoginViewModel(
     private suspend fun downloadFileWithProgress(
         url: String,
         outputStream: Sink,
-        onProgress: (Float, Long) -> Unit
+        onProgress: (Double) -> Unit
     ) {
         try {
             val client: HttpClient = HttpClientFactory.makeClient(false)
@@ -608,15 +635,14 @@ class LoginViewModel(
                         if (bytesRead <= 0) break
                         sink.write(buffer, 0, bytesRead)
                         totalRead += bytesRead
-                        println("Download progress: $totalRead / $contentLen and Url is $url")
                         if (contentLen > 0) {
-                            val progress = (totalRead / contentLen.toFloat())
-                            onProgress(progress, contentLen)
+                            val progress = (totalRead / contentLen.toDouble())
+                            onProgress(progress)
                         }
                     }
 
                     sink.flush()
-                    onProgress(1f, contentLen)
+                    onProgress(1.0)
                 }
                 channel.cancel()
             }
