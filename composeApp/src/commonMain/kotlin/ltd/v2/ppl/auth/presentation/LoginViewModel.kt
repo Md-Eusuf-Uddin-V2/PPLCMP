@@ -38,9 +38,10 @@ import ltd.v2.ppl.auth.domain.use_case.getSignInData
 import ltd.v2.ppl.auth.domain.use_case.getSurveyModelData
 import ltd.v2.ppl.auth.domain.use_case.getUserInfoData
 import ltd.v2.ppl.common_utils.constants.AppConstant
+import ltd.v2.ppl.common_utils.utils.FileHelper
+import ltd.v2.ppl.common_utils.utils.getAppPackageName
 import ltd.v2.ppl.core.app_url.AppUrl
 import ltd.v2.ppl.core.data_source.app_pref.AppPreference
-import ltd.v2.ppl.core.data_source.createFileOutputStream
 import ltd.v2.ppl.core.data_source.remote.HttpClientFactory
 import ltd.v2.ppl.core.domain.Result
 import okio.Sink
@@ -61,7 +62,6 @@ class LoginViewModel(
     private val appPref: AppPreference,
     private val connectivity: Connectivity,
     private val deviceInfoXState: DeviceInfoXState,
-    private val httpClient: HttpClient,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(LoginState())
@@ -212,6 +212,8 @@ class LoginViewModel(
     private fun callSignInApi(username: String, password: String) {
         viewModelScope.launch {
             campCount = 0
+            totalMediaFile = 0
+            currentMediaFile = 0
             _state.update { it.copy(isDownloadDialogShow = true) }
 
             _state.update {
@@ -267,6 +269,7 @@ class LoginViewModel(
                 is Result.Error -> {
                     println("Error result is ${result.error.message}")
                     _state.update { it.copy(isDownloadDialogShow = false) }
+                    _oneTimeState.emit(LoginState(error = result.error.message))
                 }
             }
         }
@@ -300,6 +303,7 @@ class LoginViewModel(
                     } /*else if (AppConstant.accessList.contains(AppConstant.JOINT_CALL_MODULE)) {
 
                     }*/ else {
+                        _state.update { it.copy(isDownloadDialogShow = false) }
                         _oneTimeState.emit(LoginState(noAccess = true))
                     }
 
@@ -309,6 +313,7 @@ class LoginViewModel(
                 is Result.Error -> {
                     println("Error result is ${result.error.message}")
                     _state.update { it.copy(isDownloadDialogShow = false) }
+                    _oneTimeState.emit(LoginState(error = result.error.message))
                 }
             }
         }
@@ -340,6 +345,7 @@ class LoginViewModel(
                 is Result.Error -> {
                     println("Error result is ${result.error.message}")
                     _state.update { it.copy(isDownloadDialogShow = false) }
+                    _oneTimeState.emit(LoginState(error = result.error.message))
                 }
             }
         }
@@ -367,7 +373,25 @@ class LoginViewModel(
                                             if (appPref.getCampaignData().size == campCount) {
                                                 appPref.storeCampaignId(appPref.getCampaignData()[0].id.toString())
                                                 appPref.storeCampaignName(appPref.getCampaignData()[0].name.toString())
-                                                _state.update { it.copy(isDownloadDialogShow = false) }
+                                                _state.update {
+                                                    it.copy(
+                                                        downloadList = mutableListOf(
+                                                            DownloadModel(
+                                                                type = "api",
+                                                                title = "Getting Information",
+                                                                downloadProgress = DownloadProgress(
+                                                                    currentFileIndex = 4,
+                                                                    progress = 1.00,
+                                                                    totalFiles = 4
+                                                                )
+
+                                                            )
+                                                        )
+                                                    )
+                                                }
+
+                                               getDownloadFiles()
+
                                             } else {
                                                 getSurveyData(
                                                     token = token,
@@ -379,6 +403,7 @@ class LoginViewModel(
 
                                         is Result.Error -> {
                                             _state.update { it.copy(isDownloadDialogShow = false) }
+                                            _oneTimeState.emit(LoginState(error = insertResult.error.message))
                                         }
 
                                     }
@@ -422,6 +447,7 @@ class LoginViewModel(
 
                                         is Result.Error -> {
                                             _state.update { it.copy(isDownloadDialogShow = false) }
+                                            _oneTimeState.emit(LoginState(error = isUpdated.error.message))
                                         }
                                     }
                                 }
@@ -429,6 +455,7 @@ class LoginViewModel(
 
                             is Result.Error -> {
                                 _state.update { it.copy(isDownloadDialogShow = false) }
+                                _oneTimeState.emit(LoginState(error = campData.error.message))
                             }
                         }
                     }
@@ -438,6 +465,7 @@ class LoginViewModel(
                 is Result.Error -> {
                     println("Error result is ${result.error.message}")
                     _state.update { it.copy(isDownloadDialogShow = false) }
+                    _oneTimeState.emit(LoginState(error = result.error.message))
                 }
             }
 
@@ -529,6 +557,8 @@ class LoginViewModel(
 
                 is Result.Error -> {
                     println("Error result is ${result.error.message}")
+                    _state.update { it.copy(isDownloadDialogShow = false) }
+                    _oneTimeState.emit(LoginState(error = result.error.message))
                 }
             }
 
@@ -562,13 +592,32 @@ class LoginViewModel(
             val fileCount = downloadModel.mediaFiles?.size ?: return@launch
             var progressTemp = 0.0
             var progressTempRecent = 0.0
-            downloadModel.mediaFiles.forEachIndexed { fileIndex, mediaFile ->
-                val output = createFileOutputStream(mediaFile.url.substringAfterLast("/"))
 
-                downloadFileWithProgress(mediaFile.url, output) { progress ->
+            for (i in 0 until downloadModel.mediaFiles.size) {
+                if (FileHelper.fileExists(
+                        getAppPackageName(),
+                        downloadModel.mediaFiles[i].url.substringAfterLast("/")
+                    )
+                ) {
+                    updateDownloadState(
+                        i + 1,
+                        1.0,
+                        index,
+                        fileCount
+                    )
+                    currentMediaFile++
+                    continue
+                }
+
+                val output = FileHelper.createFileSink(
+                    getAppPackageName(),
+                    downloadModel.mediaFiles[i].url.substringAfterLast("/")
+                )
+
+                downloadFileWithProgress(downloadModel.mediaFiles[i].url, output) { progress ->
                     progressTempRecent = (progress / (fileCount.toDouble() / 100.0)) / 100.0
                     updateDownloadState(
-                        fileIndex + 1,
+                        i + 1,
                         progressTemp + progressTempRecent,
                         index,
                         fileCount
@@ -581,9 +630,10 @@ class LoginViewModel(
             }
 
             println("Total Media File is $totalMediaFile and Current Media File is $currentMediaFile")
-
-
+            _state.update { it.copy(isDownloadDialogShow = false) }
         }
+
+
     }
 
 

@@ -341,7 +341,6 @@ fun DownloadDialogCompose(
                         LazyColumn(modifier = Modifier.fillMaxSize()) {
 
                             itemsIndexed(downloadList, key = { index, item -> item.title!! }) { index, model ->
-                              //  println(model.toString())
                                 if (model.mediaFiles != null) {
                                     LaunchedEffect(key1 = index) {
                                         onFilesDownloadStart(index)

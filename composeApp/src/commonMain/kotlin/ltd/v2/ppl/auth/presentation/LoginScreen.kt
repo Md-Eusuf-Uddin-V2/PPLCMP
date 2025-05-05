@@ -79,6 +79,12 @@ fun LoginScreenRoot(
                 showToast(
                     "No Access found")
             }
+
+            if(onTimeState.error != null){
+                showToast(
+                    onTimeState.error
+                )
+            }
         }
     }
 

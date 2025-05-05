@@ -58,8 +58,7 @@ fun loginModule() = module {
             controller = get(),
             appPref = get(),
             connectivity = get(),
-            deviceInfoXState = get(),
-            httpClient = get()
+            deviceInfoXState = get()
         )
     }
 }
