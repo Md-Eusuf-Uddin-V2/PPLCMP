@@ -7,6 +7,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import dev.icerock.moko.permissions.compose.PermissionsControllerFactory
 import dev.icerock.moko.permissions.compose.rememberPermissionsControllerFactory
+import ltd.v2.ppl.attendance.presentation.AttendanceScreenRoot
+import ltd.v2.ppl.attendance.presentation.AttendanceScreenViewModel
 import ltd.v2.ppl.auth.presentation.LoginScreenRoot
 import ltd.v2.ppl.auth.presentation.LoginViewModel
 import ltd.v2.ppl.splash.SplashScreenRoot
@@ -25,8 +27,8 @@ fun AppNavigation() {
             SplashScreenRoot(
                 viewModel = viewModel,
                 onNavigateToLogin = {
-                    navController.navigate(Route.Login){
-                        popUpTo(Route.Splash){
+                    navController.navigate(Route.Login) {
+                        popUpTo(Route.Splash) {
                             inclusive = true
                         }
                     }
@@ -44,7 +46,28 @@ fun AppNavigation() {
 
             LoginScreenRoot(
                 viewModel = viewModel,
-                controller = controller
+                controller = controller,
+                navigateToDashboard = {
+                    navController.navigate(Route.Dashboard)
+                },
+                navigateToAttendance = {
+                    navController.navigate(Route.Attendance)/*{
+                        popUpTo(Route.Login) {
+                            inclusive = true
+                        }
+                    }*/
+                }
+            )
+        }
+
+        composable<Route.Dashboard> {
+            // DashboardScreenRoot()
+        }
+
+        composable<Route.Attendance> {
+            val viewModel = koinViewModel<AttendanceScreenViewModel>()
+            AttendanceScreenRoot(
+                viewModel = viewModel
             )
         }
     }

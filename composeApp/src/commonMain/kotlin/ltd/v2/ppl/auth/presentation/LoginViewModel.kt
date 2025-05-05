@@ -548,7 +548,15 @@ class LoginViewModel(
                         }
 
                         if (state.value.downloadList.size == 1) {
-                            println("No files to download")
+                           if(appPref.getAttendanceInfo().checkInStatus != null && appPref.getAttendanceInfo().checkInStatus == true){
+                               _oneTimeState.emit(LoginState(shouldNavigateToDashBoard = true))
+                               _state.update { it.copy(isDownloadDialogShow = false) }
+
+                           }else{
+                               _oneTimeState.emit(LoginState(shouldNavigateToAttendance = true))
+                               _state.update { it.copy(isDownloadDialogShow = false) }
+
+                           }
                         }
 
 
@@ -629,8 +637,18 @@ class LoginViewModel(
 
             }
 
-            println("Total Media File is $totalMediaFile and Current Media File is $currentMediaFile")
-            _state.update { it.copy(isDownloadDialogShow = false) }
+           if(totalMediaFile == currentMediaFile){
+               if(appPref.getAttendanceInfo().checkInStatus != null && appPref.getAttendanceInfo().checkInStatus == true){
+                   _oneTimeState.emit(LoginState(shouldNavigateToDashBoard = true))
+                   _state.update { it.copy(isDownloadDialogShow = false) }
+
+               }else{
+                   _oneTimeState.emit(LoginState(shouldNavigateToAttendance = true))
+                   _state.update { it.copy(isDownloadDialogShow = false) }
+
+               }
+           }
+
         }
 
 

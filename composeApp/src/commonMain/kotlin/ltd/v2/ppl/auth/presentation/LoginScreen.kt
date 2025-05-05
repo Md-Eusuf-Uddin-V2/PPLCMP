@@ -60,6 +60,8 @@ import pplcmp.composeapp.generated.resources.warning_msg
 fun LoginScreenRoot(
     viewModel: LoginViewModel,
     controller: PermissionsController,
+    navigateToDashboard :() -> Unit,
+    navigateToAttendance :() -> Unit
 ) {
 
     BindEffect(controller)
@@ -67,23 +69,13 @@ fun LoginScreenRoot(
     val state by viewModel.state.collectAsState()
 
     LaunchedEffect(Unit){
-        viewModel.oneTimeState.collect{ onTimeState ->
-            if (onTimeState.noInternetAvailable){
-                showToast(
-                    "No Internet Available",
-
-                    )
-
-            }
-            if (onTimeState.noAccess){
-                showToast(
-                    "No Access found")
-            }
-
-            if(onTimeState.error != null){
-                showToast(
-                    onTimeState.error
-                )
+        viewModel.oneTimeState.collect{ oneTimeState ->
+            when {
+                oneTimeState.noInternetAvailable -> showToast("No Internet Available")
+                oneTimeState.noAccess -> showToast("No Access found")
+                oneTimeState.error != null -> showToast(state.error ?: "")
+                oneTimeState.shouldNavigateToDashBoard -> navigateToDashboard()
+                oneTimeState.shouldNavigateToAttendance -> navigateToAttendance()
             }
         }
     }

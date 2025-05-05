@@ -9,4 +9,10 @@ sealed interface Route {
 
     @Serializable
     data object Login: Route
+
+    @Serializable
+    data object Dashboard: Route
+
+    @Serializable
+    data object Attendance: Route
 }

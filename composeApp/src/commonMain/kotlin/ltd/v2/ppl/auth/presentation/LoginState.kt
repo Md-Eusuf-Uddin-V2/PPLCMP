@@ -13,6 +13,8 @@ data class LoginState(
     val passwordError: Boolean = false,
     val isDownloadDialogShow: Boolean = false,
     val noAccess: Boolean = false,
-    val downloadList: List<DownloadModel> = emptyList()
+    val downloadList: List<DownloadModel> = emptyList(),
+    val shouldNavigateToDashBoard: Boolean = false,
+    val shouldNavigateToAttendance: Boolean = false,
 
 )
