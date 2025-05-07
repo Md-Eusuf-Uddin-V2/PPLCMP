@@ -9,14 +9,18 @@ import dev.jordond.connectivity.Connectivity
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.timeout
+import io.ktor.client.request.head
 import io.ktor.client.request.prepareGet
 import io.ktor.client.statement.HttpStatement
+import io.ktor.client.statement.bodyAsChannel
+import io.ktor.http.ContentDisposition.Companion.File
 import io.ktor.http.contentLength
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.cancel
 import io.ktor.utils.io.readAvailable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -479,17 +483,13 @@ class LoginViewModel(
             val imageList: MutableList<MediaFile> = mutableListOf(
                 MediaFile("https://user-images.githubusercontent.com/132100144/235250068-74c909ff-8a2c-4539-990f-4999ecd8e379.png"),
                 MediaFile("https://user-images.githubusercontent.com/132100144/235250068-74c909ff-8a2c-4539-990f-4999ecd8e379.png"),
-                MediaFile("https://user-images.githubusercontent.com/132100144/235250068-74c909ff-8a2c-4539-990f-4999ecd8e379.png"),
-                MediaFile("https://user-images.githubusercontent.com/132100144/235250068-74c909ff-8a2c-4539-990f-4999ecd8e379.png"),
-                MediaFile("https://user-images.githubusercontent.com/132100144/235250068-74c909ff-8a2c-4539-990f-4999ecd8e379.png"),
-                MediaFile("https://user-images.githubusercontent.com/132100144/235250068-74c909ff-8a2c-4539-990f-4999ecd8e379.png"),
-                MediaFile("https://user-images.githubusercontent.com/132100144/235250068-74c909ff-8a2c-4539-990f-4999ecd8e379.png"),
-                MediaFile("https://user-images.githubusercontent.com/132100144/235250068-74c909ff-8a2c-4539-990f-4999ecd8e379.png"),
-                MediaFile("https://user-images.githubusercontent.com/132100144/235250068-74c909ff-8a2c-4539-990f-4999ecd8e379.png")
+                MediaFile("https://download.samplelib.com/png/sample-boat-400x300.png"),
+                MediaFile("https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885_1280.jpg"),
+                MediaFile("https://yavuzceliker.github.io/sample-images/image-1.jpg")
             )
             val videoList: MutableList<MediaFile> = mutableListOf(
-                MediaFile(url = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4"),
-                MediaFile(url = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4")
+                MediaFile(url = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"),
+                MediaFile(url = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4")
             )
 
             when (val result = getAllCampaignData(appPref.getLoginData().id!!.toString())) {
@@ -550,10 +550,12 @@ class LoginViewModel(
                         if (state.value.downloadList.size == 1) {
                            if(appPref.getAttendanceInfo().checkInStatus != null && appPref.getAttendanceInfo().checkInStatus == true){
                                _oneTimeState.emit(LoginState(shouldNavigateToDashBoard = true))
+                               delay(timeMillis = 500)
                                _state.update { it.copy(isDownloadDialogShow = false) }
 
                            }else{
                                _oneTimeState.emit(LoginState(shouldNavigateToAttendance = true))
+                               delay(timeMillis = 500)
                                _state.update { it.copy(isDownloadDialogShow = false) }
 
                            }
@@ -607,13 +609,17 @@ class LoginViewModel(
                         downloadModel.mediaFiles[i].url.substringAfterLast("/")
                     )
                 ) {
+                    progressTempRecent = (1.0 / (fileCount.toDouble() / 100.0)) / 100.0
+
                     updateDownloadState(
                         i + 1,
-                        1.0,
+                        progressTemp + progressTempRecent,
                         index,
                         fileCount
                     )
+                    delay(timeMillis = 50)
                     currentMediaFile++
+                    progressTemp += progressTempRecent
                     continue
                 }
 
@@ -624,6 +630,7 @@ class LoginViewModel(
 
                 downloadFileWithProgress(downloadModel.mediaFiles[i].url, output) { progress ->
                     progressTempRecent = (progress / (fileCount.toDouble() / 100.0)) / 100.0
+                    println("Progress is ${progressTempRecent+progressTemp}")
                     updateDownloadState(
                         i + 1,
                         progressTemp + progressTempRecent,
@@ -640,10 +647,12 @@ class LoginViewModel(
            if(totalMediaFile == currentMediaFile){
                if(appPref.getAttendanceInfo().checkInStatus != null && appPref.getAttendanceInfo().checkInStatus == true){
                    _oneTimeState.emit(LoginState(shouldNavigateToDashBoard = true))
+                   delay(timeMillis = 500)
                    _state.update { it.copy(isDownloadDialogShow = false) }
 
                }else{
                    _oneTimeState.emit(LoginState(shouldNavigateToAttendance = true))
+                   delay(timeMillis = 500)
                    _state.update { it.copy(isDownloadDialogShow = false) }
 
                }
@@ -667,7 +676,7 @@ class LoginViewModel(
             val updatedItem = updatedList[index].copy(
                 downloadProgress = DownloadProgress(
                     currentFileIndex = fileIndex,
-                    progress = progress.toDouble(),
+                    progress = progress,
                     totalFiles = totalSize
                 )
             )
