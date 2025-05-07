@@ -74,9 +74,9 @@ class LoginViewModel(
     private val _oneTimeState = MutableSharedFlow<LoginState>()
     val oneTimeState: SharedFlow<LoginState> = _oneTimeState
 
-    var campCount = 0
-    var currentMediaFile = 0
-    var totalMediaFile = 0
+    private var campCount = 0
+    private var currentMediaFile = 0
+    private var totalMediaFile = 0
 
 
     private val requiredPermissions = listOf(

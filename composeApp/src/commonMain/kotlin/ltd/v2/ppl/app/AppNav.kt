@@ -65,7 +65,7 @@ fun AppNavigation() {
         }
 
         composable<Route.Attendance> {
-            val viewModel = koinViewModel<AttendanceScreenViewModel>()
+            val viewModel: AttendanceScreenViewModel = koinViewModel<AttendanceScreenViewModel>()
             AttendanceScreenRoot(
                 viewModel = viewModel
             )
