@@ -15,19 +15,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun CheckInImageCaptureCompose(){
+fun CheckInCompose(onNext: () -> Unit){
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(text = "CheckInImageCapture Collection")
+            Text("Check In")
             Spacer(modifier = Modifier.height(16.dp))
             OutlinedButton(
-                onClick = {
-
-                },
+                onClick = onNext,
                 modifier = Modifier.wrapContentSize()
             ) {
                 Text("Next")

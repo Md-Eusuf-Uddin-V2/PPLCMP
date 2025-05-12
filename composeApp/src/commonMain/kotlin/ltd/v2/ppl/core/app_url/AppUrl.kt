@@ -16,6 +16,7 @@ object AppUrl {
 
     object  Attendance{
         const val MATERIALS_URL = "campaign-manager/api/v1/material/list/user"
+        const val POST_MATERIALS_URL = "campaign-manager/api/v1/material/accept"
     }
 
 

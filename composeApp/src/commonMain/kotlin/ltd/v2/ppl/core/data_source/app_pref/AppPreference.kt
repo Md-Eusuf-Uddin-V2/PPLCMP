@@ -9,6 +9,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
+import ltd.v2.ppl.attendance.data.mappers.toDomainModel
+import ltd.v2.ppl.attendance.data.response_model.MaterialPostDataModel
+import ltd.v2.ppl.attendance.domain.model.MaterialPostDomainModel
+import ltd.v2.ppl.attendance.domain.use_case.PostMaterialsData
 import ltd.v2.ppl.auth.data.mappers.toDomain
 import ltd.v2.ppl.auth.data.response_model.CampaignListModel
 import ltd.v2.ppl.auth.data.response_model.DailyCheckStatusDataModel
@@ -129,4 +133,31 @@ class AppPreference(private val dataStore: DataStore<Preferences>) {
         return campaignName.first()
 
     }
+
+    suspend fun storeAssetsPostData(assetsPostList: String) {
+        dataStore.edit { prefs ->
+            prefs[stringPreferencesKey(PrefConstants.assetsPostList)] = assetsPostList
+        }
+    }
+
+    suspend fun getAssetsPostData(): List<MaterialPostDomainModel> {
+        val assetsPostListFlow = dataStore.data
+            .map { prefs ->
+                prefs[stringPreferencesKey(PrefConstants.assetsPostList)]
+            }
+
+        val jsonString = assetsPostListFlow.first()
+
+        return if (!jsonString.isNullOrBlank()) {
+            try {
+                val assetsList = Json.decodeFromString<List<MaterialPostDataModel>>(jsonString)
+                assetsList.map { it.toDomainModel() }
+            } catch (e: Exception) {
+                emptyList()
+            }
+        } else {
+            emptyList()
+        }
+    }
+
 }

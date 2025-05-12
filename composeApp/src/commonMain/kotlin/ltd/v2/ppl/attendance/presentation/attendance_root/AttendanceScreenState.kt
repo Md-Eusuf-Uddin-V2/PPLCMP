@@ -1,4 +1,4 @@
-package ltd.v2.ppl.attendance.presentation
+package ltd.v2.ppl.attendance.presentation.attendance_root
 
 import androidx.compose.runtime.Composable
 import ltd.v2.ppl.attendance.domain.model.MaterialDataDomain

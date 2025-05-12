@@ -15,14 +15,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun AssetCollectionCompose(onNext: () -> Unit) {
+fun CheckOutCompose(onNext: () -> Unit){
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text("Asset Collection")
+            Text("Check Out")
             Spacer(modifier = Modifier.height(16.dp))
             OutlinedButton(
                 onClick = onNext,

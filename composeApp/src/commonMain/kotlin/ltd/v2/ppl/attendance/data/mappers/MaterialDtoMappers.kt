@@ -26,6 +26,7 @@ fun Material.toDomain(): MaterialItemDomain = MaterialItemDomain(
     name = name.orEmpty(),
     campaignName = campaignName.orEmpty(),
     qty = qty ?: 0,
+    acceptedQty = this.qty ?: 0,
     type = type ?: 0,
     typeName = typeName,
     campaignId = campaignId ?: 0,

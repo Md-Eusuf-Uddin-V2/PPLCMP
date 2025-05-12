@@ -8,6 +8,7 @@ object AppConstant {
     const val ASSET_COLLECTION = 173
     const val GIVEABLE_COLLECTION = 174
 
+    const val CHECK_IN_OUT = 170
     const val ATTENDANCE_PHOTO = 175
     const val CHECK_IN_PHOTO_CAPTURE = 210
     const val CHECK_OUT_PHOTO_CAPTURE = 211

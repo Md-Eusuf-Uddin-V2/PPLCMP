@@ -7,8 +7,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import dev.icerock.moko.permissions.compose.PermissionsControllerFactory
 import dev.icerock.moko.permissions.compose.rememberPermissionsControllerFactory
-import ltd.v2.ppl.attendance.presentation.AttendanceScreenRoot
-import ltd.v2.ppl.attendance.presentation.AttendanceScreenViewModel
+import ltd.v2.ppl.attendance.presentation.attendance_root.AttendanceScreenRoot
+import ltd.v2.ppl.attendance.presentation.attendance_root.AttendanceScreenViewModel
 import ltd.v2.ppl.auth.presentation.LoginScreenRoot
 import ltd.v2.ppl.auth.presentation.LoginViewModel
 import ltd.v2.ppl.splash.SplashScreenRoot
@@ -67,7 +67,10 @@ fun AppNavigation() {
         composable<Route.Attendance> {
             val viewModel: AttendanceScreenViewModel = koinViewModel<AttendanceScreenViewModel>()
             AttendanceScreenRoot(
-                viewModel = viewModel
+                viewModel = viewModel,
+                onBackClick = {
+                    navController.popBackStack()
+                }
             )
         }
     }

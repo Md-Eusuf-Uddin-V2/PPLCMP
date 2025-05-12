@@ -8,4 +8,6 @@ object PrefConstants {
     const val campaignData = "campaignData"
     const val campaignId = "campaignId"
     const val campaignName = "campaignName"
+    const val assetsPostList = "assetsPostList"
+
 }

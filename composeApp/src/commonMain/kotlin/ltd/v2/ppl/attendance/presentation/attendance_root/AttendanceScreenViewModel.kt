@@ -1,4 +1,4 @@
-package ltd.v2.ppl.attendance.presentation
+package ltd.v2.ppl.attendance.presentation.attendance_root
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,9 +11,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ltd.v2.ppl.attendance.domain.use_case.GetMaterialsData
-import ltd.v2.ppl.attendance.presentation.components.AssetCollectionCompose
-import ltd.v2.ppl.attendance.presentation.components.CheckInImageCaptureCompose
-import ltd.v2.ppl.attendance.presentation.components.GiveAbleCollectionCompose
+import ltd.v2.ppl.attendance.presentation.asset.AssetCollectionCompose
+import ltd.v2.ppl.attendance.presentation.components.CheckInCompose
+import ltd.v2.ppl.attendance.presentation.checkin_image_capture.CheckInImageCaptureCompose
+import ltd.v2.ppl.attendance.presentation.components.CheckOutCompose
+import ltd.v2.ppl.attendance.presentation.giveable.GiveAbleCollectionCompose
 import ltd.v2.ppl.common_utils.constants.AppConstant
 import ltd.v2.ppl.core.data_source.app_pref.AppPreference
 import ltd.v2.ppl.core.domain.Result
@@ -21,7 +23,7 @@ import ltd.v2.ppl.core.domain.Result
 class AttendanceScreenViewModel(
     private val getMaterialsData: GetMaterialsData,
     private val appPref: AppPreference,
-    private val connectivity: Connectivity
+    private val connectivity: Connectivity,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AttendanceScreenState())
@@ -35,7 +37,7 @@ class AttendanceScreenViewModel(
     }
 
 
-    fun onIntent(intent: AttendanceScreenIntent) {
+    private fun onIntent(intent: AttendanceScreenIntent) {
         when (intent) {
             is AttendanceScreenIntent.GoToNextPage -> {
                 goToNextPage()
@@ -60,6 +62,8 @@ class AttendanceScreenViewModel(
                         _state.update {
                             it.copy(attendanceFlowList = listOf({
                                 AssetCollectionCompose(
+                                    title = "Asset Collection",
+                                    assetsList = result.data.nonGiveable ?: emptyList(),
                                     onNext = { onIntent(AttendanceScreenIntent.GoToNextPage) })
                             }))
                         }
@@ -67,9 +71,12 @@ class AttendanceScreenViewModel(
 
                     if (AppConstant.accessList.contains(AppConstant.GIVEABLE_COLLECTION) && result.data.giveable?.size != 0) {
                         _state.update {
-                            it.copy(attendanceFlowList = it.attendanceFlowList + {
+                            it.copy(attendanceFlowList = it.attendanceFlowList.plus {
                                 GiveAbleCollectionCompose(
-                                    onNext = { onIntent(AttendanceScreenIntent.GoToNextPage) })
+                                    title = "Giveable Collection",
+                                    initialMaterials = result.data.giveable ?: emptyList(),
+                                    onNext = { onIntent(AttendanceScreenIntent.GoToNextPage) }
+                                )
                             })
                         }
                     }
@@ -80,16 +87,51 @@ class AttendanceScreenViewModel(
                                     AppConstant.CHECK_IN_GROUP_PHOTO_CAPTURE
                                 )
                             ) {
-                                _state.update { it.copy(attendanceFlowList = it.attendanceFlowList + { CheckInImageCaptureCompose() }) }
+                                _state.update {
+                                    it.copy(attendanceFlowList = it.attendanceFlowList + {
+                                        CheckInImageCaptureCompose(onNext = {
+                                            onIntent(AttendanceScreenIntent.GoToNextPage)
+                                        })
+                                    })
+                                }
                             }
                         } else {
                             if (AppConstant.accessList.contains(AppConstant.CHECK_OUT_PHOTO_CAPTURE) || AppConstant.accessList.contains(
                                     AppConstant.CHECK_OUT_GROUP_PHOTO_CAPTURE
                                 )
                             ) {
-                                _state.update { it.copy(attendanceFlowList = it.attendanceFlowList + { CheckInImageCaptureCompose() }) }
+                                _state.update {
+                                    it.copy(attendanceFlowList = it.attendanceFlowList + {
+                                        CheckInImageCaptureCompose(onNext = {
+                                            onIntent(AttendanceScreenIntent.GoToNextPage)
+                                        })
+                                    })
+                                }
                             }
 
+                        }
+                    }
+
+                    if (AppConstant.accessList.contains(AppConstant.CHECK_IN_OUT)) {
+                        if (appPref.getAttendanceInfo().checkInStatus != null && !appPref.getAttendanceInfo().checkInStatus!!) {
+                            _state.update {
+                                it.copy(attendanceFlowList = it.attendanceFlowList + {
+                                    CheckInCompose(
+                                        onNext = {
+
+                                        })
+                                })
+                            }
+                        }
+
+                    } else {
+                        _state.update {
+                            it.copy(attendanceFlowList = it.attendanceFlowList + {
+                                CheckOutCompose(
+                                    onNext = {
+
+                                    })
+                            })
                         }
                     }
 
@@ -113,7 +155,10 @@ class AttendanceScreenViewModel(
 
     fun setPage(index: Int) {
         _state.update {
-            it.copy(currentPage = index.coerceIn(it.attendanceFlowList.indices))
+            val maxIndex = it.attendanceFlowList.lastIndex
+            it.copy(
+                currentPage = if (maxIndex >= 0) index.coerceIn(0..maxIndex) else 0
+            )
         }
     }
 
